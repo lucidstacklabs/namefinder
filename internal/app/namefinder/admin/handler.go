@@ -102,7 +102,7 @@ func (h *Handler) Register() {
 		c.JSON(http.StatusOK, admin)
 	})
 
-	h.router.PUT("/api/v1/admins/:adminID/password", func(c *gin.Context) {
+	h.router.PUT("/api/v1/admins/current/password", func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(c, time.Second*5)
 		defer cancel()
 
@@ -293,5 +293,34 @@ func (h *Handler) Register() {
 		}
 
 		c.JSON(http.StatusOK, admin)
+	})
+
+	h.router.PUT("/api/v1/admins/:adminID/password", func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(c, time.Second*5)
+		defer cancel()
+
+		_, err := h.authenticator.ValidateAdminContext(c)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+
+			return
+		}
+
+		adminID := c.Param("adminID")
+		password, err := h.service.ResetPassword(ctx, adminID)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, password)
 	})
 }

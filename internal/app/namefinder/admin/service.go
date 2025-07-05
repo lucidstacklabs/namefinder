@@ -241,8 +241,20 @@ func (s *Service) List(ctx context.Context, page int64, size int64) ([]*Admin, e
 	return admins, nil
 }
 
-func (s *Service) ResetPassword() {
+func (s *Service) ResetPassword(ctx context.Context, adminID string) (*PasswordResponse, error) {
+	password, err := secret.Generate(16)
 
+	if err != nil {
+		return nil, err
+	}
+
+	admin, err := s.ChangePassword(ctx, adminID, &PasswordChangeRequest{Password: password})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &PasswordResponse{Admin: admin, Password: password}, nil
 }
 
 func (s *Service) usernameExists(ctx context.Context, username string) (bool, error) {
