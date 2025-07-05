@@ -45,7 +45,7 @@ func (s *Server) Start() {
 	mongoDatabase := client.Database(s.config.MongoDatabase)
 
 	// Services setup
-	admin.NewService(mongoDatabase.Collection("admins"))
+	adminService := admin.NewService(mongoDatabase.Collection("admins"))
 
 	// DNS server setup
 
@@ -69,6 +69,7 @@ func (s *Server) Start() {
 	// Admin server setup
 	router := gin.Default()
 	health.NewCheckHandler(router).Register()
+	admin.NewHandler(router, adminService).Register()
 
 	log.Printf("starting admin server on %s:%s", s.config.AdminHost, s.config.AdminPort)
 
