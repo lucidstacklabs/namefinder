@@ -170,4 +170,44 @@ func (h *Handler) Register() {
 
 		c.JSON(http.StatusOK, admin)
 	})
+
+	h.router.POST("/api/v1/admins", func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(c, time.Second*5)
+		defer cancel()
+
+		aa, err := h.authenticator.ValidateAdminContext(c)
+
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+
+			return
+		}
+
+		var req AdditionRequest
+
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+
+			return
+		}
+
+		admin, err := h.service.Add(ctx, &req, aa.ID)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, admin)
+	})
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/lucidstacklabs/namefinder/internal/pkg/auth"
+	"github.com/lucidstacklabs/namefinder/internal/pkg/secret"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -153,8 +154,45 @@ func (s *Service) ChangePassword(ctx context.Context, adminID string, request *P
 	return admin, nil
 }
 
-func (s *Service) Add() {
+func (s *Service) Add(ctx context.Context, request *AdditionRequest, creatorID string) (*PasswordResponse, error) {
+	usernameExists, err := s.usernameExists(ctx, request.Username)
 
+	if err != nil {
+		return nil, err
+	}
+
+	if usernameExists {
+		return nil, fmt.Errorf("username %s is already taken", request.Username)
+	}
+
+	password, err := secret.Generate(16)
+
+	if err != nil {
+		return nil, err
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+
+	if err != nil {
+		return nil, err
+	}
+
+	admin := &Admin{
+		ID:        primitive.NewObjectID(),
+		Username:  request.Username,
+		Password:  string(hashedPassword),
+		CreatorID: creatorID,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	_, err = s.mongo.InsertOne(ctx, admin)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &PasswordResponse{Admin: admin, Password: password}, nil
 }
 
 func (s *Service) Delete() {

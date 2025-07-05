@@ -13,3 +13,7 @@ type TokenRequest struct {
 type PasswordChangeRequest struct {
 	Password string `json:"password" binding:"required"`
 }
+
+type AdditionRequest struct {
+	Username string `json:"username" binding:"required"`
+}
