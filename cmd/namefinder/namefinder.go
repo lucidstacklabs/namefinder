@@ -13,5 +13,8 @@ func main() {
 		AdminPort:     env.GetOrDefault("ADMIN_PORT", "5301"),
 		MongoEndpoint: env.GetOrDefault("MONGO_ENDPOINT", "mongodb://localhost:27017"),
 		MongoDatabase: env.GetOrDefault("MONGO_DB", "namefinder"),
+		JwtSigningKey: env.GetOrDefault("JWT_SIGNING_KEY", "secret"),
+		JwtIssuer:     env.GetOrDefault("JWT_ISSUER", "namefinder"),
+		JwtAudience:   env.GetOrDefault("JWT_AUDIENCE", "namefinder"),
 	}).Start()
 }

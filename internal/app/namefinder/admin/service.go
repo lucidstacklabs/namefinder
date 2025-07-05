@@ -2,7 +2,9 @@ package admin
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"github.com/lucidstacklabs/namefinder/internal/pkg/auth"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -11,11 +13,12 @@ import (
 )
 
 type Service struct {
-	mongo *mongo.Collection
+	mongo         *mongo.Collection
+	authenticator *auth.Authenticator
 }
 
-func NewService(mongo *mongo.Collection) *Service {
-	return &Service{mongo: mongo}
+func NewService(mongo *mongo.Collection, authenticator *auth.Authenticator) *Service {
+	return &Service{mongo: mongo, authenticator: authenticator}
 }
 
 func (s *Service) Init(ctx context.Context, request *InitRequest) (*Admin, error) {
@@ -52,6 +55,34 @@ func (s *Service) Init(ctx context.Context, request *InitRequest) (*Admin, error
 	return admin, nil
 }
 
-func (s *Service) GetToken() {
+func (s *Service) GetToken(ctx context.Context, request *TokenRequest) (*TokenResponse, error) {
+	result := s.mongo.FindOne(ctx, bson.M{"username": request.Username})
 
+	if errors.Is(result.Err(), mongo.ErrNoDocuments) {
+		return nil, fmt.Errorf("invalid username and password combination")
+	}
+
+	if result.Err() != nil {
+		return nil, result.Err()
+	}
+
+	var admin Admin
+
+	if err := result.Decode(&admin); err != nil {
+		return nil, err
+	}
+
+	err := bcrypt.CompareHashAndPassword([]byte(admin.Password), []byte(request.Password))
+
+	if err != nil {
+		return nil, fmt.Errorf("invalid username and password combination")
+	}
+
+	token, err := s.authenticator.GenerateAdminToken(admin.ID.Hex())
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &TokenResponse{Token: token}, nil
 }
