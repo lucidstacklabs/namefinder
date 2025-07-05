@@ -86,3 +86,55 @@ func (s *Service) GetToken(ctx context.Context, request *TokenRequest) (*TokenRe
 
 	return &TokenResponse{Token: token}, nil
 }
+
+func (s *Service) Get(ctx context.Context, adminID string) (*Admin, error) {
+	id, err := primitive.ObjectIDFromHex(adminID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	result := s.mongo.FindOne(ctx, bson.M{"_id": id})
+
+	if errors.Is(result.Err(), mongo.ErrNoDocuments) {
+		return nil, fmt.Errorf("admin not found")
+	}
+
+	admin := &Admin{}
+
+	if err := result.Decode(&admin); err != nil {
+		return nil, err
+	}
+
+	return admin, nil
+}
+
+func (s *Service) ChangePassword() {
+
+}
+
+func (s *Service) Add() {
+
+}
+
+func (s *Service) Delete() {
+
+}
+
+func (s *Service) List() {
+
+}
+
+func (s *Service) ResetPassword() {
+
+}
+
+func (s *Service) usernameExists(ctx context.Context, username string) (bool, error) {
+	count, err := s.mongo.CountDocuments(ctx, bson.M{"username": username})
+
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
