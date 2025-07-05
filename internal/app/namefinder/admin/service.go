@@ -223,8 +223,22 @@ func (s *Service) Delete(ctx context.Context, adminID string) (*Admin, error) {
 	return admin, nil
 }
 
-func (s *Service) List() {
+func (s *Service) List(ctx context.Context, page int64, size int64) ([]*Admin, error) {
+	result, err := s.mongo.Find(ctx, bson.M{}, options.Find().SetSkip(page*size).SetLimit(size))
 
+	if err != nil {
+		return nil, err
+	}
+
+	admins := make([]*Admin, 0)
+
+	err = result.All(ctx, &admins)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return admins, nil
 }
 
 func (s *Service) ResetPassword() {
