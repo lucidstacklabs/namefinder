@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
 	"time"
 )
@@ -109,8 +110,47 @@ func (s *Service) Get(ctx context.Context, adminID string) (*Admin, error) {
 	return admin, nil
 }
 
-func (s *Service) ChangePassword() {
+func (s *Service) ChangePassword(ctx context.Context, adminID string, request *PasswordChangeRequest) (*Admin, error) {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
 
+	if err != nil {
+		return nil, err
+	}
+
+	fields := bson.M{
+		"$set": bson.M{
+			"password":   string(hashedPassword),
+			"updated_at": time.Now(),
+		},
+	}
+
+	id, err := primitive.ObjectIDFromHex(adminID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	filter := bson.M{
+		"_id": id,
+	}
+
+	result := s.mongo.FindOneAndUpdate(ctx, filter, fields, options.FindOneAndUpdate().SetReturnDocument(options.After))
+
+	if errors.Is(result.Err(), mongo.ErrNoDocuments) {
+		return nil, fmt.Errorf("admin not found")
+	}
+
+	if result.Err() != nil {
+		return nil, result.Err()
+	}
+
+	admin := &Admin{}
+
+	if err := result.Decode(&admin); err != nil {
+		return nil, err
+	}
+
+	return admin, nil
 }
 
 func (s *Service) Add() {
