@@ -195,8 +195,32 @@ func (s *Service) Add(ctx context.Context, request *AdditionRequest, creatorID s
 	return &PasswordResponse{Admin: admin, Password: password}, nil
 }
 
-func (s *Service) Delete() {
+func (s *Service) Delete(ctx context.Context, adminID string) (*Admin, error) {
+	id, err := primitive.ObjectIDFromHex(adminID)
 
+	if err != nil {
+		return nil, err
+	}
+
+	filter := bson.M{"_id": id}
+
+	result := s.mongo.FindOneAndDelete(ctx, filter)
+
+	if errors.Is(result.Err(), mongo.ErrNoDocuments) {
+		return nil, fmt.Errorf("admin not found")
+	}
+
+	if result.Err() != nil {
+		return nil, result.Err()
+	}
+
+	admin := &Admin{}
+
+	if err := result.Decode(&admin); err != nil {
+		return nil, err
+	}
+
+	return admin, nil
 }
 
 func (s *Service) List() {
