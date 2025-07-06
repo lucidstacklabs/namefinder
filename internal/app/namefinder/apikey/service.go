@@ -2,6 +2,7 @@ package apikey
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/lucidstacklabs/namefinder/internal/pkg/secret"
 	"go.mongodb.org/mongo-driver/bson"
@@ -70,6 +71,34 @@ func (s *Service) List(ctx context.Context, page int64, size int64) ([]*ApiKey, 
 	}
 
 	return apiKeys, nil
+}
+
+func (s *Service) Get(ctx context.Context, apiKeyID string) (*ApiKey, error) {
+	id, err := primitive.ObjectIDFromHex(apiKeyID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	result := s.mongo.FindOne(ctx, bson.M{"_id": id})
+
+	if errors.Is(result.Err(), mongo.ErrNoDocuments) {
+		return nil, fmt.Errorf("api key not found")
+	}
+
+	if result.Err() != nil {
+		return nil, result.Err()
+	}
+
+	apiKey := &ApiKey{}
+
+	err = result.Decode(apiKey)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return apiKey, nil
 }
 
 func (s *Service) nameExists(ctx context.Context, name string) (bool, error) {
