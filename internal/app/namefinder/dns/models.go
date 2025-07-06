@@ -7,6 +7,7 @@ import (
 
 type Record struct {
 	ID          primitive.ObjectID `bson:"_id" json:"id"`
+	NamespaceID string             `bson:"namespace_id" json:"namespace_id"`
 	Name        string             `bson:"name" json:"name"`
 	Type        string             `bson:"type" json:"type"`
 	Value       string             `bson:"value" json:"value"`

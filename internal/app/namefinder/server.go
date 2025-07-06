@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/lucidstacklabs/namefinder/internal/app/namefinder/admin"
+	"github.com/lucidstacklabs/namefinder/internal/app/namefinder/apikey"
 	dnsLib "github.com/lucidstacklabs/namefinder/internal/app/namefinder/dns"
 	"github.com/lucidstacklabs/namefinder/internal/app/namefinder/health"
 	"github.com/lucidstacklabs/namefinder/internal/pkg/auth"
@@ -36,6 +37,7 @@ type ServerConfig struct {
 
 func (s *Server) Start() {
 	// Database setup
+
 	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(s.config.MongoEndpoint))
 
 	if err != nil {
@@ -49,8 +51,10 @@ func (s *Server) Start() {
 	mongoDatabase := client.Database(s.config.MongoDatabase)
 
 	// Services setup
+
 	authenticator := auth.NewAuthenticator(s.config.JwtSigningKey, s.config.JwtIssuer, s.config.JwtAudience)
 	adminService := admin.NewService(mongoDatabase.Collection("admins"), authenticator)
+	apiKeyService := apikey.NewService(mongoDatabase.Collection("api_keys"))
 
 	// DNS server setup
 
@@ -72,9 +76,11 @@ func (s *Server) Start() {
 	}()
 
 	// Admin server setup
+
 	router := gin.Default()
 	health.NewCheckHandler(router).Register()
 	admin.NewHandler(router, authenticator, adminService).Register()
+	apikey.NewHandler(router, authenticator, apiKeyService).Register()
 
 	log.Printf("starting admin server on %s:%s", s.config.AdminHost, s.config.AdminPort)
 
