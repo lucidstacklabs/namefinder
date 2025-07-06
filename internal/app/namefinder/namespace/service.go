@@ -2,6 +2,7 @@ package namespace
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -62,6 +63,34 @@ func (s *Service) List(ctx context.Context, page int64, size int64) ([]*Namespac
 	}
 
 	return namespaces, nil
+}
+
+func (s *Service) Get(ctx context.Context, namespaceID string) (*Namespace, error) {
+	id, err := primitive.ObjectIDFromHex(namespaceID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	result := s.mongo.FindOne(ctx, bson.M{"_id": id})
+
+	if errors.Is(result.Err(), mongo.ErrNoDocuments) {
+		return nil, fmt.Errorf("namespace not found")
+	}
+
+	if result.Err() != nil {
+		return nil, result.Err()
+	}
+
+	var namespace Namespace
+
+	err = result.Decode(&namespace)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &namespace, nil
 }
 
 func (s *Service) nameExists(ctx context.Context, name string) (bool, error) {
