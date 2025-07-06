@@ -37,7 +37,7 @@ func (h *Handler) Register() {
 
 		var req CreationRequest
 
-		if err := c.BindJSON(&req); err != nil {
+		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"success": false,
 				"message": err.Error(),
@@ -160,7 +160,7 @@ func (h *Handler) Register() {
 		apiKeyID := c.Param("apiKeyID")
 
 		var req UpdateRequest
-		if err := c.BindJSON(&req); err != nil {
+		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"success": false,
 				"message": err.Error(),

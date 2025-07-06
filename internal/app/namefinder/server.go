@@ -8,6 +8,7 @@ import (
 	"github.com/lucidstacklabs/namefinder/internal/app/namefinder/apikey"
 	dnsLib "github.com/lucidstacklabs/namefinder/internal/app/namefinder/dns"
 	"github.com/lucidstacklabs/namefinder/internal/app/namefinder/health"
+	"github.com/lucidstacklabs/namefinder/internal/app/namefinder/namespace"
 	"github.com/lucidstacklabs/namefinder/internal/pkg/auth"
 	"github.com/miekg/dns"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -55,6 +56,7 @@ func (s *Server) Start() {
 	authenticator := auth.NewAuthenticator(s.config.JwtSigningKey, s.config.JwtIssuer, s.config.JwtAudience)
 	adminService := admin.NewService(mongoDatabase.Collection("admins"), authenticator)
 	apiKeyService := apikey.NewService(mongoDatabase.Collection("api_keys"))
+	namespaceService := namespace.NewService(mongoDatabase.Collection("namespaces"))
 
 	// DNS server setup
 
@@ -81,6 +83,7 @@ func (s *Server) Start() {
 	health.NewCheckHandler(router).Register()
 	admin.NewHandler(router, authenticator, adminService).Register()
 	apikey.NewHandler(router, authenticator, apiKeyService).Register()
+	namespace.NewHandler(router, authenticator, namespaceService).Register()
 
 	log.Printf("starting admin server on %s:%s", s.config.AdminHost, s.config.AdminPort)
 
