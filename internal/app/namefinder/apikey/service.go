@@ -152,6 +152,34 @@ func (s *Service) Update(ctx context.Context, apiKeyID string, request *UpdateRe
 	return apiKey, nil
 }
 
+func (s *Service) Delete(ctx context.Context, apiKeyID string) (*ApiKey, error) {
+	id, err := primitive.ObjectIDFromHex(apiKeyID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	result := s.mongo.FindOneAndDelete(ctx, bson.M{"_id": id})
+
+	if errors.Is(result.Err(), mongo.ErrNoDocuments) {
+		return nil, fmt.Errorf("api key not found")
+	}
+
+	if result.Err() != nil {
+		return nil, result.Err()
+	}
+
+	apiKey := &ApiKey{}
+
+	err = result.Decode(apiKey)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return apiKey, nil
+}
+
 func (s *Service) nameExists(ctx context.Context, name string) (bool, error) {
 	count, err := s.mongo.CountDocuments(ctx, bson.M{"name": name})
 
