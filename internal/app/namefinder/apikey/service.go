@@ -180,6 +180,47 @@ func (s *Service) Delete(ctx context.Context, apiKeyID string) (*ApiKey, error) 
 	return apiKey, nil
 }
 
+func (s *Service) GetSecret(ctx context.Context, apiKeyID string) (*SecretResponse, error) {
+	apiKey, err := s.Get(ctx, apiKeyID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &SecretResponse{Secret: apiKey.Secret}, nil
+}
+
+func (s *Service) ResetSecret(ctx context.Context, apiKeyID string) (*SecretResponse, error) {
+	apiKeySecret, err := secret.Generate(128)
+
+	if err != nil {
+		return nil, err
+	}
+
+	id, err := primitive.ObjectIDFromHex(apiKeyID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	fields := bson.M{
+		"secret":     apiKeySecret,
+		"updated_at": time.Now(),
+	}
+
+	result, err := s.mongo.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": fields})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if result.MatchedCount == 0 {
+		return nil, fmt.Errorf("api key not found")
+	}
+
+	return &SecretResponse{Secret: apiKeySecret}, nil
+}
+
 func (s *Service) nameExists(ctx context.Context, name string) (bool, error) {
 	count, err := s.mongo.CountDocuments(ctx, bson.M{"name": name})
 

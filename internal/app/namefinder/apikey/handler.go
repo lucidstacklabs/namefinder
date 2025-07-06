@@ -212,4 +212,66 @@ func (h *Handler) Register() {
 
 		c.JSON(http.StatusOK, apiKey)
 	})
+
+	h.router.GET("/api/v1/api-keys/:apiKeyID/secret", func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(c, time.Second*5)
+		defer cancel()
+
+		_, err := h.authenticator.ValidateAdminContext(c)
+
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+
+			return
+		}
+
+		apiKeyID := c.Param("apiKeyID")
+
+		apiKeySecret, err := h.service.GetSecret(ctx, apiKeyID)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, apiKeySecret)
+	})
+
+	h.router.PUT("/api/v1/api-keys/:apiKeyID/secret", func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(c, time.Second*5)
+		defer cancel()
+
+		_, err := h.authenticator.ValidateAdminContext(c)
+
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+
+			return
+		}
+
+		apiKeyID := c.Param("apiKeyID")
+
+		apiKeySecret, err := h.service.ResetSecret(ctx, apiKeyID)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, apiKeySecret)
+	})
 }
