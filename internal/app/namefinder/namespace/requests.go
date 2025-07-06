@@ -1,5 +1,5 @@
 package namespace
 
 type CreationRequest struct {
-	Name string `json:"name" bson:"name"`
+	Name string `json:"name" bson:"name" binding:"required"`
 }
