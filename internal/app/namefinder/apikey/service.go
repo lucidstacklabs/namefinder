@@ -7,6 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"time"
 )
 
@@ -51,6 +52,24 @@ func (s *Service) Create(ctx context.Context, request *CreationRequest, creatorI
 	}
 
 	return apiKey, nil
+}
+
+func (s *Service) List(ctx context.Context, page int64, size int64) ([]*ApiKey, error) {
+	apiKeys := make([]*ApiKey, 0)
+
+	result, err := s.mongo.Find(ctx, bson.M{}, options.Find().SetSkip(page*size).SetLimit(size))
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = result.All(ctx, &apiKeys)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return apiKeys, nil
 }
 
 func (s *Service) nameExists(ctx context.Context, name string) (bool, error) {
