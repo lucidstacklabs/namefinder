@@ -142,4 +142,44 @@ func (h *Handler) Register() {
 
 		c.JSON(http.StatusOK, apiKey)
 	})
+
+	h.router.PUT("/api/v1/api-keys/:apiKeyID", func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(c, time.Second*5)
+		defer cancel()
+
+		_, err := h.authenticator.ValidateAdminContext(c)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+
+			return
+		}
+
+		apiKeyID := c.Param("apiKeyID")
+
+		var req UpdateRequest
+		if err := c.BindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+
+			return
+		}
+
+		apiKey, err := h.service.Update(ctx, apiKeyID, &req)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, apiKey)
+	})
 }

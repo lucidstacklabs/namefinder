@@ -101,6 +101,57 @@ func (s *Service) Get(ctx context.Context, apiKeyID string) (*ApiKey, error) {
 	return apiKey, nil
 }
 
+func (s *Service) Update(ctx context.Context, apiKeyID string, request *UpdateRequest) (*ApiKey, error) {
+	id, err := primitive.ObjectIDFromHex(apiKeyID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	fields := bson.M{
+		"updated_at": time.Now(),
+	}
+
+	if request.Name != "" {
+		count, err := s.mongo.CountDocuments(ctx, bson.M{
+			"_id": bson.M{
+				"$ne": id,
+			},
+			"name": request.Name,
+		})
+
+		if err != nil {
+			return nil, err
+		}
+
+		if count > 0 {
+			return nil, fmt.Errorf("api key %s already exists", request.Name)
+		}
+
+		fields["name"] = request.Name
+	}
+
+	result := s.mongo.FindOneAndUpdate(ctx, bson.M{"_id": id}, bson.M{"$set": fields}, options.FindOneAndUpdate().SetReturnDocument(options.After))
+
+	if errors.Is(result.Err(), mongo.ErrNoDocuments) {
+		return nil, fmt.Errorf("api key not found")
+	}
+
+	if result.Err() != nil {
+		return nil, result.Err()
+	}
+
+	apiKey := &ApiKey{}
+
+	err = result.Decode(apiKey)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return apiKey, nil
+}
+
 func (s *Service) nameExists(ctx context.Context, name string) (bool, error) {
 	count, err := s.mongo.CountDocuments(ctx, bson.M{"name": name})
 
