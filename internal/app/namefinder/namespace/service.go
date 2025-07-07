@@ -93,6 +93,59 @@ func (s *Service) Get(ctx context.Context, namespaceID string) (*Namespace, erro
 	return &namespace, nil
 }
 
+func (s *Service) Update(ctx context.Context, namespaceID string, request *UpdateRequest) (*Namespace, error) {
+	id, err := primitive.ObjectIDFromHex(namespaceID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	fields := bson.M{
+		"updated_at": time.Now(),
+	}
+
+	if request.Name != "" {
+		count, err := s.mongo.CountDocuments(ctx, bson.M{
+			"_id":  bson.M{"$ne": id},
+			"name": request.Name,
+		})
+
+		if err != nil {
+			return nil, err
+		}
+
+		if count > 0 {
+			return nil, fmt.Errorf("namespace %s already exists", request.Name)
+		}
+
+		fields["name"] = request.Name
+	}
+
+	result := s.mongo.FindOneAndUpdate(ctx, bson.M{
+		"_id": id,
+	}, bson.M{
+		"$set": fields,
+	})
+
+	if errors.Is(result.Err(), mongo.ErrNoDocuments) {
+		return nil, fmt.Errorf("namespace not found")
+	}
+
+	if result.Err() != nil {
+		return nil, result.Err()
+	}
+
+	namespace := &Namespace{}
+
+	err = result.Decode(namespace)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return namespace, nil
+}
+
 func (s *Service) nameExists(ctx context.Context, name string) (bool, error) {
 	count, err := s.mongo.CountDocuments(ctx, bson.M{"name": name})
 

@@ -142,4 +142,45 @@ func (h *Handler) Register() {
 
 		c.JSON(http.StatusOK, namespace)
 	})
+
+	h.router.PUT("/api/v1/namespaces/:namespaceID", func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(c, time.Second*5)
+		defer cancel()
+
+		_, err := h.authenticator.ValidateAdminContext(c)
+
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+
+			return
+		}
+
+		namespaceID := c.Param("namespaceID")
+
+		var req UpdateRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+
+			return
+		}
+
+		namespace, err := h.service.Update(ctx, namespaceID, &req)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, namespace)
+	})
 }
