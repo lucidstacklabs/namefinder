@@ -115,4 +115,36 @@ func (h *RecordAdminHandler) Register() {
 
 		c.JSON(http.StatusOK, records)
 	})
+
+	h.router.GET("/admin/api/v1/namespaces/:namespaceID/records/:recordID", func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(c, time.Second*5)
+		defer cancel()
+
+		_, err := h.authenticator.ValidateAdminContext(c)
+
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+
+			return
+		}
+
+		namespaceID := c.Param("namespaceID")
+		recordID := c.Param("recordID")
+
+		record, err := h.recordService.Get(ctx, namespaceID, recordID)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, record)
+	})
 }
