@@ -146,6 +146,36 @@ func (s *Service) Update(ctx context.Context, namespaceID string, request *Updat
 	return namespace, nil
 }
 
+func (s *Service) Delete(ctx context.Context, namespaceID string) (*Namespace, error) {
+	id, err := primitive.ObjectIDFromHex(namespaceID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	result := s.mongo.FindOneAndDelete(ctx, bson.M{
+		"_id": id,
+	})
+
+	if errors.Is(result.Err(), mongo.ErrNoDocuments) {
+		return nil, fmt.Errorf("namespace not found")
+	}
+	
+	if result.Err() != nil {
+		return nil, result.Err()
+	}
+
+	namespace := &Namespace{}
+
+	err = result.Decode(namespace)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return namespace, nil
+}
+
 func (s *Service) nameExists(ctx context.Context, name string) (bool, error) {
 	count, err := s.mongo.CountDocuments(ctx, bson.M{"name": name})
 
