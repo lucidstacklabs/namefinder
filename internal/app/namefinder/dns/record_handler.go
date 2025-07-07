@@ -274,4 +274,57 @@ func (h *RecordHandler) Register() {
 
 		c.JSON(http.StatusOK, record)
 	})
+
+	h.router.DELETE("/api/v1/namespaces/:namespaceID/records/:recordID", func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(c, time.Second*5)
+		defer cancel()
+
+		apiKey, err := h.authenticator.ValidateApiKeyContext(c, ctx)
+
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+
+			return
+		}
+
+		namespaceID := c.Param("namespaceID")
+
+		hasPermission, err := h.apiKeyAccessService.HasPermission(ctx, namespaceID, apiKey.ID, namespace.ActionDelete)
+
+		if err != nil {
+			c.JSON(http.StatusForbidden, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+
+			return
+		}
+
+		if !hasPermission {
+			c.JSON(http.StatusForbidden, gin.H{
+				"success": false,
+				"message": "Permission denied",
+			})
+
+			return
+		}
+
+		recordID := c.Param("recordID")
+
+		record, err := h.recordService.Delete(ctx, namespaceID, recordID)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, record)
+	})
 }
