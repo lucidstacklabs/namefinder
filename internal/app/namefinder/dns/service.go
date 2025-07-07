@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/lucidstacklabs/namefinder/internal/app/namefinder/namespace"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"time"
 )
 
@@ -52,8 +54,24 @@ func (s *RecordService) Add(ctx context.Context, namespaceID string, request *Re
 	return record, nil
 }
 
-func (s *RecordService) List() {
+func (s *RecordService) List(ctx context.Context, namespaceID string, page int64, size int64) ([]*Record, error) {
+	result, err := s.mongo.Find(ctx, bson.M{
+		"namespace_id": namespaceID,
+	}, options.Find().SetSkip(page*size).SetLimit(size))
 
+	if err != nil {
+		return nil, err
+	}
+
+	records := make([]*Record, 0)
+
+	err = result.All(ctx, &records)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return records, nil
 }
 
 func (s *RecordService) Get() {

@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/lucidstacklabs/namefinder/internal/pkg/auth"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -59,5 +60,59 @@ func (h *RecordAdminHandler) Register() {
 		}
 
 		c.JSON(http.StatusCreated, record)
+	})
+
+	h.router.GET("/admin/api/v1/namespaces/:namespaceID/records", func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(c, time.Second*5)
+		defer cancel()
+
+		_, err := h.authenticator.ValidateAdminContext(c)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+
+			return
+		}
+
+		namespaceID := c.Param("namespaceID")
+
+		page := c.DefaultQuery("page", "0")
+		size := c.DefaultQuery("size", "50")
+		pageInt, err := strconv.ParseInt(page, 10, 64)
+
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+
+			return
+		}
+
+		sizeInt, err := strconv.ParseInt(size, 10, 64)
+
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+
+			return
+		}
+
+		records, err := h.recordService.List(ctx, namespaceID, pageInt, sizeInt)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, records)
 	})
 }
