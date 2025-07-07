@@ -10,5 +10,9 @@ type UpdateRequest struct {
 
 type ApiKeyAccessRequest struct {
 	ApiKeyID string   `json:"api_key_id" binding:"required"`
-	Actions  []Action `json:"actions" bson:"actions"`
+	Actions  []Action `json:"actions" binding:"required"`
+}
+
+type ApiKeyAccessDestroyRequest struct {
+	ApiKeyID string `json:"api_key_id" binding:"required"`
 }

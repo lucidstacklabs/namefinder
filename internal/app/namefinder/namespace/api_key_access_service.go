@@ -63,3 +63,44 @@ func (s *ApiKeyAccessService) Add(ctx context.Context, namespaceID string, reque
 
 	return err
 }
+
+func (s *ApiKeyAccessService) Delete(ctx context.Context, namespaceID string, request *ApiKeyAccessRequest) error {
+	result, err := s.mongo.UpdateOne(ctx, bson.M{
+		"namespace_id": namespaceID,
+		"api_key_id":   request.ApiKeyID,
+	}, bson.M{
+		"$set": bson.M{
+			"updated_at": time.Now(),
+		},
+		"$pullAll": bson.M{
+			"actions": request.Actions,
+		},
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("api key access to namespace does not exist")
+	}
+
+	return nil
+}
+
+func (s *ApiKeyAccessService) Destroy(ctx context.Context, namespaceID string, request *ApiKeyAccessDestroyRequest) error {
+	result, err := s.mongo.DeleteOne(ctx, bson.M{
+		"namespace_id": namespaceID,
+		"api_key_id":   request.ApiKeyID,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if result.DeletedCount == 0 {
+		return fmt.Errorf("api key access to namespace does not exist")
+	}
+
+	return nil
+}
