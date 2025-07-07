@@ -210,4 +210,68 @@ func (h *RecordHandler) Register() {
 
 		c.JSON(http.StatusOK, record)
 	})
+
+	h.router.PUT("/api/v1/namespaces/:namespaceID/records/:recordID", func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(c, time.Second*5)
+		defer cancel()
+
+		apiKey, err := h.authenticator.ValidateApiKeyContext(c, ctx)
+
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+
+			return
+		}
+
+		namespaceID := c.Param("namespaceID")
+
+		hasPermission, err := h.apiKeyAccessService.HasPermission(ctx, namespaceID, apiKey.ID, namespace.ActionUpdate)
+
+		if err != nil {
+			c.JSON(http.StatusForbidden, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+
+			return
+		}
+
+		if !hasPermission {
+			c.JSON(http.StatusForbidden, gin.H{
+				"success": false,
+				"message": "Permission denied",
+			})
+
+			return
+		}
+
+		recordID := c.Param("recordID")
+
+		var req RecordUpdateRequest
+
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+
+			return
+		}
+
+		record, err := h.recordService.Update(ctx, namespaceID, recordID, &req)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, record)
+	})
 }
