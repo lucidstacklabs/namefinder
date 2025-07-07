@@ -237,6 +237,40 @@ func (s *Service) Exists(ctx context.Context, apiKeyID string) (bool, error) {
 	return count > 0, nil
 }
 
+func (s *Service) GetByIDs(ctx context.Context, apiKeyIDs []string) ([]*ApiKey, error) {
+	ids := make([]primitive.ObjectID, len(apiKeyIDs))
+
+	for i, apiKeyID := range apiKeyIDs {
+		id, err := primitive.ObjectIDFromHex(apiKeyID)
+
+		if err != nil {
+			return nil, err
+		}
+
+		ids[i] = id
+	}
+
+	result, err := s.mongo.Find(ctx, bson.M{
+		"_id": bson.M{
+			"$in": ids,
+		},
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	apiKeys := make([]*ApiKey, 0)
+
+	err = result.All(ctx, &apiKeys)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return apiKeys, nil
+}
+
 func (s *Service) nameExists(ctx context.Context, name string) (bool, error) {
 	count, err := s.mongo.CountDocuments(ctx, bson.M{"name": name})
 
