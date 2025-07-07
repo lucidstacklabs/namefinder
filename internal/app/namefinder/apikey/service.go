@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	apiKeyCore "github.com/lucidstacklabs/namefinder/internal/pkg/apikey"
 	"github.com/lucidstacklabs/namefinder/internal/pkg/secret"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -20,7 +21,7 @@ func NewService(mongo *mongo.Collection) *Service {
 	return &Service{mongo: mongo}
 }
 
-func (s *Service) Create(ctx context.Context, request *CreationRequest, creatorID string) (*ApiKey, error) {
+func (s *Service) Create(ctx context.Context, request *CreationRequest, creatorID string) (*apiKeyCore.ApiKey, error) {
 	nameExists, err := s.nameExists(ctx, request.Name)
 
 	if err != nil {
@@ -37,7 +38,7 @@ func (s *Service) Create(ctx context.Context, request *CreationRequest, creatorI
 		return nil, err
 	}
 
-	apiKey := &ApiKey{
+	apiKey := &apiKeyCore.ApiKey{
 		ID:        primitive.NewObjectID(),
 		Name:      request.Name,
 		Secret:    apiKeySecret,
@@ -55,8 +56,8 @@ func (s *Service) Create(ctx context.Context, request *CreationRequest, creatorI
 	return apiKey, nil
 }
 
-func (s *Service) List(ctx context.Context, page int64, size int64) ([]*ApiKey, error) {
-	apiKeys := make([]*ApiKey, 0)
+func (s *Service) List(ctx context.Context, page int64, size int64) ([]*apiKeyCore.ApiKey, error) {
+	apiKeys := make([]*apiKeyCore.ApiKey, 0)
 
 	result, err := s.mongo.Find(ctx, bson.M{}, options.Find().SetSkip(page*size).SetLimit(size))
 
@@ -73,7 +74,7 @@ func (s *Service) List(ctx context.Context, page int64, size int64) ([]*ApiKey, 
 	return apiKeys, nil
 }
 
-func (s *Service) Get(ctx context.Context, apiKeyID string) (*ApiKey, error) {
+func (s *Service) Get(ctx context.Context, apiKeyID string) (*apiKeyCore.ApiKey, error) {
 	id, err := primitive.ObjectIDFromHex(apiKeyID)
 
 	if err != nil {
@@ -90,7 +91,7 @@ func (s *Service) Get(ctx context.Context, apiKeyID string) (*ApiKey, error) {
 		return nil, result.Err()
 	}
 
-	apiKey := &ApiKey{}
+	apiKey := &apiKeyCore.ApiKey{}
 
 	err = result.Decode(apiKey)
 
@@ -101,7 +102,7 @@ func (s *Service) Get(ctx context.Context, apiKeyID string) (*ApiKey, error) {
 	return apiKey, nil
 }
 
-func (s *Service) Update(ctx context.Context, apiKeyID string, request *UpdateRequest) (*ApiKey, error) {
+func (s *Service) Update(ctx context.Context, apiKeyID string, request *UpdateRequest) (*apiKeyCore.ApiKey, error) {
 	id, err := primitive.ObjectIDFromHex(apiKeyID)
 
 	if err != nil {
@@ -141,7 +142,7 @@ func (s *Service) Update(ctx context.Context, apiKeyID string, request *UpdateRe
 		return nil, result.Err()
 	}
 
-	apiKey := &ApiKey{}
+	apiKey := &apiKeyCore.ApiKey{}
 
 	err = result.Decode(apiKey)
 
@@ -152,7 +153,7 @@ func (s *Service) Update(ctx context.Context, apiKeyID string, request *UpdateRe
 	return apiKey, nil
 }
 
-func (s *Service) Delete(ctx context.Context, apiKeyID string) (*ApiKey, error) {
+func (s *Service) Delete(ctx context.Context, apiKeyID string) (*apiKeyCore.ApiKey, error) {
 	id, err := primitive.ObjectIDFromHex(apiKeyID)
 
 	if err != nil {
@@ -169,7 +170,7 @@ func (s *Service) Delete(ctx context.Context, apiKeyID string) (*ApiKey, error) 
 		return nil, result.Err()
 	}
 
-	apiKey := &ApiKey{}
+	apiKey := &apiKeyCore.ApiKey{}
 
 	err = result.Decode(apiKey)
 
@@ -237,7 +238,7 @@ func (s *Service) Exists(ctx context.Context, apiKeyID string) (bool, error) {
 	return count > 0, nil
 }
 
-func (s *Service) GetByIDs(ctx context.Context, apiKeyIDs []string) ([]*ApiKey, error) {
+func (s *Service) GetByIDs(ctx context.Context, apiKeyIDs []string) ([]*apiKeyCore.ApiKey, error) {
 	ids := make([]primitive.ObjectID, len(apiKeyIDs))
 
 	for i, apiKeyID := range apiKeyIDs {
@@ -260,7 +261,7 @@ func (s *Service) GetByIDs(ctx context.Context, apiKeyIDs []string) ([]*ApiKey, 
 		return nil, err
 	}
 
-	apiKeys := make([]*ApiKey, 0)
+	apiKeys := make([]*apiKeyCore.ApiKey, 0)
 
 	err = result.All(ctx, &apiKeys)
 

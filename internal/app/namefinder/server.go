@@ -53,9 +53,10 @@ func (s *Server) Start() {
 
 	// Services setup
 
-	authenticator := auth.NewAuthenticator(s.config.JwtSigningKey, s.config.JwtIssuer, s.config.JwtAudience)
+	apiKeysCollection := mongoDatabase.Collection("api_keys")
+	authenticator := auth.NewAuthenticator(s.config.JwtSigningKey, s.config.JwtIssuer, s.config.JwtAudience, apiKeysCollection)
 	adminService := admin.NewService(mongoDatabase.Collection("admins"), authenticator)
-	apiKeyService := apikey.NewService(mongoDatabase.Collection("api_keys"))
+	apiKeyService := apikey.NewService(apiKeysCollection)
 	namespaceService := namespace.NewService(mongoDatabase.Collection("namespaces"))
 	apiKeyAccessService := namespace.NewApiKeyAccessService(mongoDatabase.Collection("api_key_accesses"), namespaceService, apiKeyService)
 	recordService := dnsLib.NewRecordService(mongoDatabase.Collection("records"), namespaceService)

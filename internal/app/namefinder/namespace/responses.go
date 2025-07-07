@@ -1,6 +1,8 @@
 package namespace
 
-import "github.com/lucidstacklabs/namefinder/internal/app/namefinder/apikey"
+import (
+	"github.com/lucidstacklabs/namefinder/internal/pkg/apikey"
+)
 
 type ApiKeyAccessResponse struct {
 	Access *ApiKeyAccess  `json:"access"`

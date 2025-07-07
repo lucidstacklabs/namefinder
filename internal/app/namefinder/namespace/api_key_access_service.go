@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/lucidstacklabs/namefinder/internal/app/namefinder/apikey"
+	apikey2 "github.com/lucidstacklabs/namefinder/internal/pkg/apikey"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -121,7 +122,7 @@ func (s *ApiKeyAccessService) List(ctx context.Context, namespaceID string, page
 		return nil, err
 	}
 
-	apiKeyMap := make(map[string]*apikey.ApiKey, len(apiKeys))
+	apiKeyMap := make(map[string]*apikey2.ApiKey, len(apiKeys))
 
 	for _, apiKey := range apiKeys {
 		apiKeyMap[apiKey.ID.Hex()] = apiKey

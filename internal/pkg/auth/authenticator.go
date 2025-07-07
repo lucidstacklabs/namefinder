@@ -1,26 +1,33 @@
 package auth
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/lucidstacklabs/namefinder/internal/pkg/apikey"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"strings"
 	"time"
 )
 
 type Authenticator struct {
-	jwtSigningKey []byte
-	issuer        string
-	audience      string
+	jwtSigningKey    []byte
+	issuer           string
+	audience         string
+	apiKeyCollection *mongo.Collection
 }
 
-func NewAuthenticator(jwtSigningKey string, issuer string, audience string) *Authenticator {
-	return &Authenticator{jwtSigningKey: []byte(jwtSigningKey), issuer: issuer, audience: audience}
+func NewAuthenticator(jwtSigningKey string, issuer string, audience string, apiKeyCollection *mongo.Collection) *Authenticator {
+	return &Authenticator{jwtSigningKey: []byte(jwtSigningKey), issuer: issuer, audience: audience, apiKeyCollection: apiKeyCollection}
 }
 
 const (
 	BearerToken    = "Bearer"
 	TypeAdminToken = "admin"
+	ApiKey         = "ApiKey"
 )
 
 func (a *Authenticator) GenerateAdminToken(adminID string) (string, error) {
@@ -40,6 +47,45 @@ func (a *Authenticator) GenerateAdminToken(adminID string) (string, error) {
 	}
 
 	return tokenString, nil
+}
+
+func (a *Authenticator) ValidateApiKeyContext(c *gin.Context, ctx context.Context) (*AuthenticatedApiKey, error) {
+	tokenType, token, err := a.extractToken(c)
+
+	if err != nil {
+		return nil, err
+	}
+
+	switch tokenType {
+	case ApiKey:
+		return a.validateApiKey(ctx, token)
+	default:
+		return nil, fmt.Errorf("invalid api key type")
+	}
+}
+
+func (a *Authenticator) validateApiKey(ctx context.Context, apiKey string) (*AuthenticatedApiKey, error) {
+	result := a.apiKeyCollection.FindOne(ctx, bson.M{
+		"secret": apiKey,
+	})
+
+	if errors.Is(result.Err(), mongo.ErrNoDocuments) {
+		return nil, fmt.Errorf("invalid api key")
+	}
+
+	if result.Err() != nil {
+		return nil, result.Err()
+	}
+
+	apiKeyData := &apikey.ApiKey{}
+
+	err := result.Decode(apiKeyData)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &AuthenticatedApiKey{ID: apiKeyData.ID.Hex()}, nil
 }
 
 func (a *Authenticator) ValidateAdminContext(c *gin.Context) (*AuthenticatedAdmin, error) {
