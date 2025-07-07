@@ -156,3 +156,17 @@ func (s *ApiKeyAccessService) Destroy(ctx context.Context, namespaceID string, r
 
 	return nil
 }
+
+func (s *ApiKeyAccessService) HasPermission(ctx context.Context, namespaceID string, apiKeyID string, action Action) (bool, error) {
+	count, err := s.mongo.CountDocuments(ctx, bson.M{
+		"namespace_id": namespaceID,
+		"api_key_id":   apiKeyID,
+		"actions":      action,
+	})
+
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}

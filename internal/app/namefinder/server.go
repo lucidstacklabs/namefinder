@@ -89,6 +89,7 @@ func (s *Server) Start() {
 	namespace.NewHandler(router, authenticator, namespaceService).Register()
 	namespace.NewApiKeyAccessHandler(router, authenticator, apiKeyAccessService).Register()
 	dnsLib.NewRecordAdminHandler(router, authenticator, recordService).Register()
+	dnsLib.NewRecordHandler(router, authenticator, apiKeyAccessService, recordService).Register()
 
 	log.Printf("starting admin server on %s:%s", s.config.AdminHost, s.config.AdminPort)
 
