@@ -106,8 +106,61 @@ func (s *RecordService) Get(ctx context.Context, namespaceID string, recordID st
 	return record, nil
 }
 
-func (s *RecordService) Update() {
+func (s *RecordService) Update(ctx context.Context, namespaceID string, recordID string, request *RecordUpdateRequest) (*Record, error) {
+	id, err := primitive.ObjectIDFromHex(recordID)
 
+	if err != nil {
+		return nil, err
+	}
+
+	fields := bson.M{
+		"updated_at": time.Now(),
+	}
+
+	if request.Name != "" {
+		fields["name"] = request.Name
+	}
+
+	if request.Value != "" {
+		fields["value"] = request.Value
+	}
+
+	if request.Type != "" {
+		fields["type"] = request.Type
+	}
+
+	if request.Class != "" {
+		fields["class"] = request.Class
+	}
+
+	if request.TTL != 0 {
+		fields["ttl"] = request.TTL
+	}
+
+	result := s.mongo.FindOneAndUpdate(ctx, bson.M{
+		"_id":          id,
+		"namespace_id": namespaceID,
+	}, bson.M{
+		"$set": fields,
+	}, options.FindOneAndUpdate().SetReturnDocument(options.After))
+
+	if errors.Is(result.Err(), mongo.ErrNoDocuments) {
+		return nil, fmt.Errorf("record not found")
+	}
+
+	if result.Err() != nil {
+		return nil, result.Err()
+	}
+
+	record := &Record{}
+
+	err = result.Decode(record)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return record, nil
 }
 
 func (s *RecordService) Delete() {
