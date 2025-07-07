@@ -160,7 +160,7 @@ func (s *Service) Delete(ctx context.Context, namespaceID string) (*Namespace, e
 	if errors.Is(result.Err(), mongo.ErrNoDocuments) {
 		return nil, fmt.Errorf("namespace not found")
 	}
-	
+
 	if result.Err() != nil {
 		return nil, result.Err()
 	}
@@ -174,6 +174,24 @@ func (s *Service) Delete(ctx context.Context, namespaceID string) (*Namespace, e
 	}
 
 	return namespace, nil
+}
+
+func (s *Service) Exists(ctx context.Context, namespaceID string) (bool, error) {
+	id, err := primitive.ObjectIDFromHex(namespaceID)
+
+	if err != nil {
+		return false, err
+	}
+
+	count, err := s.mongo.CountDocuments(ctx, bson.M{
+		"_id": id,
+	})
+
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
 }
 
 func (s *Service) nameExists(ctx context.Context, name string) (bool, error) {

@@ -7,3 +7,8 @@ type CreationRequest struct {
 type UpdateRequest struct {
 	Name string `json:"name" bson:"name"`
 }
+
+type ApiKeyAccessRequest struct {
+	ApiKeyID string   `json:"api_key_id" binding:"required"`
+	Actions  []Action `json:"actions" bson:"actions"`
+}

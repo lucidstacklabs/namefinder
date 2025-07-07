@@ -221,6 +221,22 @@ func (s *Service) ResetSecret(ctx context.Context, apiKeyID string) (*SecretResp
 	return &SecretResponse{Secret: apiKeySecret}, nil
 }
 
+func (s *Service) Exists(ctx context.Context, apiKeyID string) (bool, error) {
+	id, err := primitive.ObjectIDFromHex(apiKeyID)
+
+	if err != nil {
+		return false, err
+	}
+
+	count, err := s.mongo.CountDocuments(ctx, bson.M{"_id": id})
+
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
+
 func (s *Service) nameExists(ctx context.Context, name string) (bool, error) {
 	count, err := s.mongo.CountDocuments(ctx, bson.M{"name": name})
 
