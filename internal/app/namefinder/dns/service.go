@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"strings"
 	"time"
 )
 
@@ -192,4 +193,36 @@ func (s *RecordService) Delete(ctx context.Context, namespaceID string, recordID
 	}
 
 	return record, nil
+}
+
+func (s *RecordService) Query(ctx context.Context, name string, recordType string) ([]*Record, error) {
+	trimmedName := strings.TrimSuffix(name, ".")
+
+	queryNames := make([]string, 0)
+	queryNames = append(queryNames, trimmedName)
+
+	if trimmedName != name {
+		queryNames = append(queryNames, name)
+	}
+
+	result, err := s.mongo.Find(ctx, bson.M{
+		"name": bson.M{
+			"$in": queryNames,
+		},
+		"type": recordType,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	records := make([]*Record, 0)
+
+	err = result.All(ctx, &records)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return records, nil
 }

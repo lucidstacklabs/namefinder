@@ -63,7 +63,7 @@ func (s *Server) Start() {
 
 	// DNS server setup
 
-	dnsHandler := dnsLib.NewHandler()
+	dnsHandler := dnsLib.NewHandler(recordService)
 	dns.HandleFunc(".", dnsHandler.Handle)
 
 	dnsServer := &dns.Server{
