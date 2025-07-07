@@ -163,6 +163,33 @@ func (s *RecordService) Update(ctx context.Context, namespaceID string, recordID
 	return record, nil
 }
 
-func (s *RecordService) Delete() {
+func (s *RecordService) Delete(ctx context.Context, namespaceID string, recordID string) (*Record, error) {
+	id, err := primitive.ObjectIDFromHex(recordID)
 
+	if err != nil {
+		return nil, err
+	}
+
+	result := s.mongo.FindOneAndDelete(ctx, bson.M{
+		"_id":          id,
+		"namespace_id": namespaceID,
+	})
+
+	if errors.Is(result.Err(), mongo.ErrNoDocuments) {
+		return nil, fmt.Errorf("record not found")
+	}
+
+	if result.Err() != nil {
+		return nil, result.Err()
+	}
+
+	record := &Record{}
+
+	err = result.Decode(record)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return record, nil
 }
