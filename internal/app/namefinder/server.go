@@ -58,6 +58,7 @@ func (s *Server) Start() {
 	apiKeyService := apikey.NewService(mongoDatabase.Collection("api_keys"))
 	namespaceService := namespace.NewService(mongoDatabase.Collection("namespaces"))
 	apiKeyAccessService := namespace.NewApiKeyAccessService(mongoDatabase.Collection("api_key_accesses"), namespaceService, apiKeyService)
+	recordService := dnsLib.NewRecordService(mongoDatabase.Collection("records"), namespaceService)
 
 	// DNS server setup
 
@@ -86,6 +87,7 @@ func (s *Server) Start() {
 	apikey.NewHandler(router, authenticator, apiKeyService).Register()
 	namespace.NewHandler(router, authenticator, namespaceService).Register()
 	namespace.NewApiKeyAccessHandler(router, authenticator, apiKeyAccessService).Register()
+	dnsLib.NewRecordAdminHandler(router, authenticator, recordService).Register()
 
 	log.Printf("starting admin server on %s:%s", s.config.AdminHost, s.config.AdminPort)
 
