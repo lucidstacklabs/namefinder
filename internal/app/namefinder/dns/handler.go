@@ -31,7 +31,14 @@ func (h *Handler) Handle(w dns.ResponseWriter, r *dns.Msg) {
 	for _, q := range r.Question {
 		log.Printf("query: %s %s", q.Name, dns.TypeToString[q.Qtype])
 
-		recordType := dns.TypeToString[q.Qtype]
+		recordType, err := GetRecordType(dns.Type(q.Qtype))
+
+		if err != nil {
+			log.Printf("error getting record type: %s", err)
+			m.Rcode = dns.RcodeNotImplemented
+			continue
+		}
+
 		records, err := h.recordService.Query(ctx, q.Name, recordType)
 
 		if err != nil {

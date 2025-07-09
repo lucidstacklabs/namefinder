@@ -195,7 +195,7 @@ func (s *RecordService) Delete(ctx context.Context, namespaceID string, recordID
 	return record, nil
 }
 
-func (s *RecordService) Query(ctx context.Context, name string, recordType string) ([]*Record, error) {
+func (s *RecordService) Query(ctx context.Context, name string, recordType RecordType) ([]*Record, error) {
 	trimmedName := strings.TrimSuffix(name, ".")
 
 	queryNames := make([]string, 0)
