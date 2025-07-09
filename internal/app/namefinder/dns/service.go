@@ -226,3 +226,11 @@ func (s *RecordService) Query(ctx context.Context, name string, recordType strin
 
 	return records, nil
 }
+
+func (s *RecordService) DeleteByNamespaceID(ctx context.Context, namespaceID string) error {
+	_, err := s.mongo.DeleteMany(ctx, bson.M{
+		"namespace_id": namespaceID,
+	})
+
+	return err
+}

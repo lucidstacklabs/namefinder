@@ -170,3 +170,11 @@ func (s *ApiKeyAccessService) HasPermission(ctx context.Context, namespaceID str
 
 	return count > 0, nil
 }
+
+func (s *ApiKeyAccessService) DeleteByNamespaceID(ctx context.Context, namespaceID string) error {
+	_, err := s.mongo.DeleteMany(ctx, bson.M{
+		"namespace_id": namespaceID,
+	})
+
+	return err
+}
