@@ -15,8 +15,8 @@ type Record struct {
 	Value       string             `bson:"value" json:"value"`
 	TTL         uint32             `bson:"ttl" json:"ttl"`
 	Class       RecordClass        `bson:"class" json:"class"`
-	CreatorType ActorType          `bson:"actor_type" json:"actor_type"`
-	CreatorID   string             `json:"creator_id" bson:"creator_id" json:"creator_id"`
+	CreatorType ActorType          `bson:"creator_type" json:"creator_type"`
+	CreatorID   string             `bson:"creator_id" json:"creator_id"`
 	CreatedAt   time.Time          `bson:"created_at" json:"created_at"`
 	UpdatedAt   time.Time          `bson:"updated_at" json:"updated_at"`
 }

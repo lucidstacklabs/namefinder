@@ -47,7 +47,7 @@ func (s *RecordService) Add(ctx context.Context, namespaceID string, request *Re
 		UpdatedAt:   time.Now(),
 	}
 
-	_, err = s.mongo.InsertOne(ctx, request)
+	_, err = s.mongo.InsertOne(ctx, record)
 
 	if err != nil {
 		return nil, err
