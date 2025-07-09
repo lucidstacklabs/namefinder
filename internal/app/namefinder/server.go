@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/lucidstacklabs/namefinder/internal/app/namefinder/admin"
 	"github.com/lucidstacklabs/namefinder/internal/app/namefinder/apikey"
+	"github.com/lucidstacklabs/namefinder/internal/app/namefinder/deletion"
 	dnsLib "github.com/lucidstacklabs/namefinder/internal/app/namefinder/dns"
 	"github.com/lucidstacklabs/namefinder/internal/app/namefinder/health"
 	"github.com/lucidstacklabs/namefinder/internal/app/namefinder/namespace"
@@ -87,6 +88,7 @@ func (s *Server) Start() {
 	admin.NewHandler(router, authenticator, adminService).Register()
 	apikey.NewHandler(router, authenticator, apiKeyService).Register()
 	namespace.NewHandler(router, authenticator, namespaceService).Register()
+	deletion.NewNamespaceDeletionHandler(router, authenticator, namespaceService, apiKeyAccessService, recordService).Register()
 	namespace.NewApiKeyAccessHandler(router, authenticator, apiKeyAccessService).Register()
 	dnsLib.NewRecordAdminHandler(router, authenticator, recordService).Register()
 	dnsLib.NewRecordHandler(router, authenticator, apiKeyAccessService, recordService).Register()
